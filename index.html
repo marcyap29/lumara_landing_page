@@ -746,7 +746,7 @@ blockquote em {
   color: var(--muted);
 }
 
-/* WAITLIST */
+/* CTA — download + optional email (classes still use waitlist- prefix) */
 .waitlist-section {
   padding: 9rem 4rem;
   position: relative;
@@ -796,8 +796,62 @@ blockquote em {
   font-size: 1rem;
   line-height: 1.75;
   color: var(--dim);
+  max-width: 48ch;
+  margin: 0 auto 2rem;
+}
+
+.store-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin: 0 auto 2.75rem;
+  max-width: 440px;
+}
+
+.store-btn {
+  flex: 1 1 160px;
+  text-align: center;
+  background: var(--indigo);
+  color: #fff;
+  padding: 0.9rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  font-weight: 400;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 0 30px rgba(99,102,241,0.3);
+}
+
+.store-btn:hover {
+  background: var(--violet);
+  transform: translateY(-1px);
+  box-shadow: 0 0 40px rgba(139,92,246,0.4);
+}
+
+.store-btn--ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border-soft);
+  box-shadow: none;
+}
+
+.store-btn--ghost:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: rgba(99, 102, 241, 0.06);
+  box-shadow: none;
+}
+
+.waitlist-updates-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--indigo-dim);
+  margin: 0 auto 1rem;
   max-width: 44ch;
-  margin: 0 auto 3rem;
 }
 
 .waitlist-form {
@@ -934,6 +988,8 @@ footer {
   nav { padding: 1.2rem 1.5rem; }
   .nav-links { display: none; }
   .pillars-section, .privacy-section, .waitlist-section { padding: 5rem 1.5rem; }
+  .store-row { flex-direction: column; max-width: 320px; }
+  .store-btn { flex: none; width: 100%; }
   .context-section, .quote-section { padding: 5rem 1.5rem; }
   .pillars { grid-template-columns: 1fr; }
   .context-inner { grid-template-columns: 1fr; gap: 3rem; }
@@ -944,6 +1000,53 @@ footer {
   .hero-sigil { width: 72px; height: 72px; }
 }
 </style>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.handleWaitlist = async function(e) {
+    e.preventDefault();
+    const emailEl = document.getElementById('wlEmail');
+    const btn = e.target.querySelector('button');
+    const success = document.getElementById('wl-success');
+    const email = emailEl.value.trim();
+    if (!email) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    success.style.color = '';
+
+    try {
+      await addDoc(collection(db, "waitlist"), {
+        email,
+        source: 'lumara',
+        createdAt: serverTimestamp()
+      });
+      success.textContent = '✦ Thanks — we\'ll only email when it matters.';
+      e.target.style.display = 'none';
+      success.style.display = 'block';
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      btn.textContent = 'Subscribe';
+      success.textContent = '✗ Something went wrong. Try again.';
+      success.style.color = '#ff8a80';
+      success.style.display = 'block';
+    }
+  };
+</script>
 </head>
 <body>
 
@@ -975,7 +1078,7 @@ footer {
     <li><a href="#pillars">What it is</a></li>
     <li><a href="#context">How context works</a></li>
     <li><a href="#privacy">Privacy</a></li>
-    <li><a href="#waitlist" class="nav-cta">Get early access</a></li>
+    <li><a href="#get-lumara" class="nav-cta">Get LUMARA</a></li>
   </ul>
 </nav>
 
@@ -995,7 +1098,7 @@ footer {
     The same capability as the best AI in the world. Your journal, your history, your patterns — available when you want them, private when you don't. Your data stays on your device.
   </p>
   <div class="hero-actions">
-    <a href="#waitlist" class="btn-primary">Get early access</a>
+    <a href="#get-lumara" class="btn-primary">Get LUMARA</a>
     <a href="#pillars" class="btn-ghost">See how it works</a>
   </div>
 
@@ -1141,23 +1244,30 @@ footer {
   </div>
 </div>
 
-<!-- WAITLIST -->
-<div class="waitlist-section" id="waitlist">
+<!-- Download + optional updates -->
+<div class="waitlist-section" id="get-lumara">
   <div class="waitlist-inner">
     <img src="data:image/png;base64,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" class="waitlist-sigil" alt="" style="animation: sigilBreathe 5s ease-in-out infinite;">
     <h2 class="waitlist-title reveal">
-      Meet the AI<br>that <em>remembers</em> you.
+      LUMARA is<br><em>here</em>.
     </h2>
     <p class="waitlist-sub reveal">
-      LUMARA is in early access. Join the list and be among the first to experience an AI that holds your full context — privately, on your terms.
+      Download the app for iPhone or Android — the same frontier AI, with your full context when you want it, private when you don't.
     </p>
 
+    <div class="store-row reveal">
+      <!-- Replace # with your App Store and Google Play listing URLs -->
+      <a class="store-btn" href="#" target="_blank" rel="noopener noreferrer">App Store</a>
+      <a class="store-btn store-btn--ghost" href="#" target="_blank" rel="noopener noreferrer">Google Play</a>
+    </div>
+
+    <p class="waitlist-updates-label reveal">Product updates</p>
     <form class="waitlist-form reveal" onsubmit="handleWaitlist(event)">
-      <input type="email" id="wlEmail" placeholder="your@email.com" required>
-      <button type="submit">Get early access</button>
+      <input type="email" id="wlEmail" placeholder="Email for occasional updates" required>
+      <button type="submit">Subscribe</button>
     </form>
-    <p id="wl-success">✦ You're on the list. We'll be in touch.</p>
-    <p class="waitlist-note reveal">No spam. Your data stays with you — even here.</p>
+    <p id="wl-success" style="display:none">✦ Thanks — we'll only email when it matters.</p>
+    <p class="waitlist-note reveal">No spam. Unsubscribe anytime. Your data stays with you — even here.</p>
   </div>
 </div>
 
@@ -1176,7 +1286,6 @@ footer {
 </footer>
 
 <script>
-  // Scroll reveal
   const reveals = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
@@ -1187,45 +1296,6 @@ footer {
     });
   }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
   reveals.forEach(el => observer.observe(el));
-
-  // Supabase waitlist
-  const SUPABASE_URL = 'https://hzboqpnmokhllvydknjz.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_s_4jnWqudwyHFv81Y7jmng_jxWnD_6a';
-
-  async function handleWaitlist(e) {
-    e.preventDefault();
-    const emailEl = document.getElementById('wlEmail');
-    const btn = e.target.querySelector('button');
-    const success = document.getElementById('wl-success');
-    const email = emailEl.value.trim();
-    if (!email) return;
-
-    btn.disabled = true;
-    btn.textContent = 'Joining...';
-
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ email, source: 'lumara' })
-    });
-
-    if (res.ok || res.status === 409) {
-      // 409 = already on waitlist, still show success
-      e.target.style.display = 'none';
-      success.style.display = 'block';
-    } else {
-      btn.disabled = false;
-      btn.textContent = 'Get early access';
-      success.textContent = '✗ Something went wrong. Try again.';
-      success.style.color = '#ff8a80';
-      success.style.display = 'block';
-    }
-  }
 </script>
 </body>
 </html>
